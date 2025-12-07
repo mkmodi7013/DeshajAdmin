@@ -1,10 +1,118 @@
 <!-- header.html -->
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+.header-icons {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.bell-icon {
+  position: relative;
+  cursor: pointer;
+}
+
+.bell-icon img {
+  width: 26px;
+}
+
+.bell-badge {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  background: red;
+  color: white;
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 50%;
+  display: none;
+}
+
+.bell-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-15deg); }
+  50% { transform: rotate(15deg); }
+  75% { transform: rotate(-15deg); }
+  100% { transform: rotate(0deg); }
+}
+</style>
+
+
+
+ </head>
+ <body>
+  <div class="header-icons">
+  
+  <!-- Bell Notification -->
+  <div class="bell-icon" id="bellIcon">
+    <img src="bell.png" alt="Notifications">
+    <span id="bellBadge" class="bell-badge">0</span>
+  </div>
+
+</div>
 <div style="background: orange; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
   <h2 style="margin:0;">Deshaj Store</h2>
   <nav>
 
     <a href="index.html" style="color:white; margin-right:10px; text-decoration:none;">Logout</a>
     <a href="admin-orders.html" style="color:white; margin-right:10px; text-decoration:none;">Orders</a>
-    
+   
   </nav>
 </div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
+  authDomain: "apna-kitchen-acdcc.firebaseapp.com",
+  projectId: "apna-kitchen-acdcc",
+  storageBucket: "apna-kitchen-acdcc.appspot.com",
+  messagingSenderId: "129562055761",
+  appId: "1:129562055761:web:baa01f9fea6f8eed025470"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const bellBadge = document.getElementById("bellBadge");
+const bellIcon = document.getElementById("bellIcon");
+
+let lastCount = 0;
+
+// Live order monitoring
+onSnapshot(collection(db, "orders"), (snapshot) => {
+
+  const pending = snapshot.docs.filter(d => d.data().status === "Pending").length;
+
+  // show badge
+  if(pending > 0) {
+    bellBadge.style.display = "inline-block";
+    bellBadge.innerText = pending;
+  } else {
+    bellBadge.style.display = "none";
+  }
+
+  // Shake if new order added
+  if(pending > lastCount) {
+    bellIcon.classList.add("bell-shake");
+    setTimeout(() => bellIcon.classList.remove("bell-shake"), 500);
+  }
+
+  lastCount = pending;
+});
+</script>
+
+ </body>
+ </html>
+

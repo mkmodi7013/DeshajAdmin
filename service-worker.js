@@ -2,13 +2,12 @@ const CACHE_NAME = "deshaj-store-v1";
 const urlsToCache = [
   "./",
   "./index.html",
-  "./shop.html",
   "./product-upload.html",
-  "./style.css",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png"
 ];
+
 
 // Install service worker and cache files
 self.addEventListener("install", event => {
@@ -37,3 +36,4 @@ self.addEventListener("fetch", event => {
     caches.match(event.request).then(response => response || fetch(event.request))
   );
 });
+
