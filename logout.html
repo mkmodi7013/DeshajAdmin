@@ -25,6 +25,7 @@
   }
   p {
     margin: 10px 0;
+    color: #555;
   }
 </style>
 
@@ -32,20 +33,47 @@
 <body>
 
 <div class="box">
-  <h2>You Have Been Logged Out</h2>
-  <p>Redirecting to login page...</p>
+  <h2>Logging Out...</h2>
+  <p id="msg">Please wait...</p>
 </div>
 
-<script>
-  // Remove all stored user data
-  localStorage.removeItem("mobile");
-  localStorage.removeItem("userLoggedIn");
-  localStorage.removeItem("cart");  // optional: clear cart on logout
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-  // Redirect after 1.5 seconds
-  setTimeout(() => {
-    window.location.href = "login.html";
-  }, 1500);
+  const firebaseConfig = {
+    apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
+    authDomain: "apna-kitchen-acdcc.firebaseapp.com",
+    projectId: "apna-kitchen-acdcc",
+    storageBucket: "apna-kitchen-acdcc.appspot.com",
+    messagingSenderId: "129562055761",
+    appId: "1:129562055761:web:baa01f9fea6f8eed025470"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  async function logout() {
+    try {
+      // Firebase logout
+      await signOut(auth);
+
+      // Clear localStorage
+      const keysToRemove = ["mobile", "userLoggedIn", "cart"];
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+
+      // Show alert
+      alert("You have been logged out successfully!");
+
+      // Redirect to index.html after user clicks OK
+      window.location.href = "index.html";
+
+    } catch (error) {
+      alert("Error logging out: " + error.message);
+    }
+  }
+
+  logout();
 </script>
 
 </body>

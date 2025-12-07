@@ -6,60 +6,48 @@
 <title>Admin Orders - Deshaj Store</title>
 
 <style>
-  body { font-family: Arial; background: #f7f7f7; padding: 20px; }
+  body { font-family: Arial; background: #f7f7f7; padding: 20px; margin:0; }
   h2 { color: orange; text-align: center; margin-bottom: 10px; }
 
+  /* Loader */
+  #loader { text-align:center; margin-top:50px; font-size:18px; }
+
   /* Status Summary */
-  .status-summary {
-    display: flex;
-    justify-content: space-around;
-    padding: 10px;
-    background: #fff;
-    margin-bottom: 15px;
-    border-radius: 10px;
-    box-shadow: 0 0 8px #ccc;
-    font-size: 16px;
-    font-weight: bold;
-  }
+  .status-summary { display:flex; justify-content:space-around; padding:10px; background:#fff; margin-bottom:15px; border-radius:10px; box-shadow:0 0 8px #ccc; font-size:16px; font-weight:bold; }
   .pending { color: orange; }
   .processed { color: blue; }
   .delivered { color: green; }
 
-  .controls { display: flex; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-  input { padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
+  .controls { display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px; }
+  input { padding:6px 10px; border-radius:6px; border:1px solid #ccc; font-size:14px; }
 
-  .order-box { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 0 8px #ccc; }
-  .order-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+  .order-box { background:#fff; padding:15px; border-radius:10px; margin-bottom:15px; box-shadow:0 0 8px #ccc; }
+  .order-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
 
-  /* Status Badge */
-  .status-badge {
-    padding: 3px 8px;
-    border-radius: 6px;
-    color: #fff;
-    font-size: 12px;
-    margin-left: 10px;
-  }
+  .status-badge { padding:3px 8px; border-radius:6px; color:#fff; font-size:12px; margin-left:10px; }
   .badge-pending { background: orange; }
   .badge-processed { background: blue; }
   .badge-delivered { background: green; }
 
-  .items { margin-top: 10px; max-height: 200px; overflow-y: auto; }
-  .item { display: flex; align-items: center; border-bottom: 1px solid #ddd; padding: 5px 0; gap: 10px; }
-  .item img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
-  select { padding: 5px 8px; border-radius: 6px; }
+  .items { margin-top:10px; max-height:200px; overflow-y:auto; }
+  .item { display:flex; align-items:center; border-bottom:1px solid #ddd; padding:5px 0; gap:10px; }
+  .item img { width:50px; height:50px; object-fit:cover; border-radius:4px; }
+  select { padding:5px 8px; border-radius:6px; }
 </style>
 </head>
 
 <body>
-
 <div id="header"></div>
 
 <script>
-  fetch("header.html")
-    .then(res => res.text())
-    .then(data => document.getElementById("header").innerHTML = data);
+  // Load header.html into this page
+  fetch('header.html')
+    .then(response => response.text())
+    .then(data => {
+      document.getElementById('header').innerHTML = data;
+    })
+    .catch(err => console.error('Header load error:', err));
 </script>
-
 <h2>Admin — Orders Management</h2>
 
 <!-- STATUS SUMMARY -->
@@ -73,12 +61,13 @@
   <input type="text" id="searchInput" placeholder="Search by name or mobile...">
 </div>
 
-<div id="ordersList">Loading orders...</div>
+<div id="loader">Loading orders...</div>
+<div id="ordersList" style="display:none;"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, query, orderBy }
-from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
@@ -91,21 +80,37 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 let allOrders = [];
 
+// -------- AUTH CHECK --------
+onAuthStateChanged(auth, (user) => {
+  if(!user || user.email !== "mkmodi7013@gmail.com") {
+    window.location.href = "index.html";
+  } else {
+    fetchOrders();
+  }
+});
+
+// -------- FETCH ORDERS --------
 async function fetchOrders() {
+  const list = document.getElementById("ordersList");
+  const loader = document.getElementById("loader");
+  loader.style.display = "block";
+  list.style.display = "none";
+
   const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
   const snap = await getDocs(q);
-  
+
   allOrders = [];
 
-  for(const d of snap.docs) {
+  for(const d of snap.docs){
     const order = d.data();
     order.id = d.id;
 
-    let user = { name: "-", mobile: order.mobile, address: "-", pincode: "-" };
-    if(order.mobile) {
+    let user = { name:"-", mobile: order.mobile, address:"-", pincode:"-" };
+    if(order.mobile){
       const u = await getDoc(doc(db, "users", order.mobile));
       if(u.exists()) user = u.data();
     }
@@ -116,17 +121,20 @@ async function fetchOrders() {
     allOrders.push(order);
   }
 
+  loader.style.display = "none";
+  list.style.display = "block";
+
   updateStatusSummary();
   displayOrders();
 }
 
-function updateStatusSummary() {
-  let p = 0, pr = 0, d = 0;
-
-  allOrders.forEach(o => {
-    if(o.status === "Pending") p++;
-    else if(o.status === "Processed") pr++;
-    else if(o.status === "Delivered") d++;
+// -------- UPDATE STATUS SUMMARY --------
+function updateStatusSummary(){
+  let p=0, pr=0, d=0;
+  allOrders.forEach(o=>{
+    if(o.status==="Pending") p++;
+    else if(o.status==="Processed") pr++;
+    else if(o.status==="Delivered") d++;
   });
 
   document.getElementById("pendingCount").innerText = p;
@@ -134,71 +142,64 @@ function updateStatusSummary() {
   document.getElementById("deliveredCount").innerText = d;
 }
 
-function displayOrders() {
+// -------- DISPLAY ORDERS --------
+function displayOrders(){
   const list = document.getElementById("ordersList");
   const search = document.getElementById("searchInput").value.toLowerCase();
 
-  const filtered = allOrders.filter(o =>
+  const filtered = allOrders.filter(o=>
     o.user.name?.toLowerCase().includes(search) ||
     o.user.mobile?.toLowerCase().includes(search)
   );
 
-  if(filtered.length === 0) {
+  if(filtered.length===0){
     list.innerHTML = "<p style='text-align:center;'>No orders found</p>";
     return;
   }
 
   list.innerHTML = "";
-  filtered.forEach(order => {
-
+  filtered.forEach(order=>{
     let itemsHTML = "";
-    (order.items || []).forEach(i => {
-      itemsHTML += `
-      <div class="item">
+    (order.items || []).forEach(i=>{
+      itemsHTML += `<div class="item">
         <img src="${i.image}" />
         <span>${i.name} (x${i.qty})</span>
-        <span>₹${i.price * i.qty}</span>
+        <span>₹${i.price*i.qty}</span>
       </div>`;
     });
 
-    const badgeClass =
-      order.status === "Pending" ? "badge-pending" :
-      order.status === "Processed" ? "badge-processed" :
-      "badge-delivered";
+    const badgeClass = order.status==="Pending" ? "badge-pending" : order.status==="Processed" ? "badge-processed" : "badge-delivered";
 
-    list.innerHTML += `
-      <div class="order-box">
-        <div class="order-header">
-          <p>
-            <strong>${order.user.name}</strong> | ${order.user.mobile}
-            <span class="status-badge ${badgeClass}">${order.status}</span>
-          </p>
-          <p>Total: ₹${order.total || 0}</p>
+    list.innerHTML += `<div class="order-box">
+      <div class="order-header">
+        <p>
+          <strong>${order.user.name}</strong> | ${order.user.mobile}
+          <span class="status-badge ${badgeClass}">${order.status}</span>
+        </p>
+        <p>Total: ₹${order.total || 0}</p>
 
-          <select onchange="updateStatus('${order.id}', this.value)">
-            <option value="Pending" ${order.status === "Pending" ? "selected" : ""}>Pending</option>
-            <option value="Processed" ${order.status === "Processed" ? "selected" : ""}>Processed</option>
-            <option value="Delivered" ${order.status === "Delivered" ? "selected" : ""}>Delivered</option>
-          </select>
-        </div>
-
-        <p><strong>Address:</strong> ${order.user.address}, Pincode: ${order.user.pincode}</p>
-        <p><strong>Order Date:</strong> ${order.timestamp ? order.timestamp.toDate().toLocaleString() : "-"}</p>
-        <div class="items">${itemsHTML}</div>
+        <select onchange="updateStatus('${order.id}', this.value)">
+          <option value="Pending" ${order.status==="Pending"?"selected":""}>Pending</option>
+          <option value="Processed" ${order.status==="Processed"?"selected":""}>Processed</option>
+          <option value="Delivered" ${order.status==="Delivered"?"selected":""}>Delivered</option>
+        </select>
       </div>
-    `;
+
+      <p><strong>Address:</strong> ${order.user.address}, Pincode: ${order.user.pincode}</p>
+      <p><strong>Order Date:</strong> ${order.timestamp ? order.timestamp.toDate().toLocaleString() : "-"}</p>
+      <div class="items">${itemsHTML}</div>
+    </div>`;
   });
 }
 
-async function updateStatus(orderId, status) {
+// -------- UPDATE ORDER STATUS --------
+window.updateStatus = async function(orderId, status){
   await updateDoc(doc(db, "orders", orderId), { status });
   fetchOrders();
 }
 
-window.updateStatus = updateStatus;
+// -------- SEARCH EVENT --------
 document.getElementById("searchInput").addEventListener("input", displayOrders);
-
-fetchOrders();
 </script>
 
 </body>
