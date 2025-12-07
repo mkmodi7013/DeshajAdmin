@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login - Deshaj Store</title>
+<link rel="manifest" href="manifest.json">
+<script>
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => console.log('Service Worker registered', reg))
+      .catch(err => console.log('Service Worker failed', err));
+    });
+  }
+</script>
+
+<style>
+  body {
+    font-family: Arial;
+    background: #f7f7f7;
+    padding: 50px;
+  }
+
+  .box {
+    max-width: 350px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #ccc;
+  }
+
+  h2 {
+    text-align: center;
+    color: orange;
+  }
+
+  input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    background: orange;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 18px;
+  }
+
+  #msg {
+    text-align: center;
+    color: red;
+    margin-top: 10px;
+  }
+</style>
+
+</head>
+<body>
+<div id="header"></div>
+
+<script>
+  // Load header.html into this page
+  fetch('header.html')
+    .then(response => response.text())
+    .then(data => {
+      document.getElementById('header').innerHTML = data;
+    })
+    .catch(err => console.error('Header load error:', err));
+</script>
+<div class="box">
+  <h2>Admin Login</h2>
+
+  <input type="email" id="email" placeholder="Admin Email">
+  <input type="password" id="password" placeholder="Password">
+
+  <button onclick="adminLogin()">Login</button>
+
+  <p id="msg"></p>
+</div>
+
+
+<script type="module">
+
+  // Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
+    authDomain: "apna-kitchen-acdcc.firebaseapp.com",
+    projectId: "apna-kitchen-acdcc",
+    storageBucket: "apna-kitchen-acdcc.appspot.com",
+    messagingSenderId: "129562055761",
+    appId: "1:129562055761:web:baa01f9fea6f8eed025470"
+  };
+
+  import { initializeApp } 
+  from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+
+  import { 
+    getAuth, signInWithEmailAndPassword 
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  const ADMIN_EMAIL = "mkmodi7013@gmail.com";   // Change if needed
+
+  async function adminLogin() {
+    const email = document.getElementById("email").value;
+    const pass = document.getElementById("password").value;
+    const msg = document.getElementById("msg");
+
+    msg.innerText = "";
+
+    if (!email || !pass) {
+      msg.innerText = "Enter Email & Password";
+      return;
+    }
+
+    try {
+      const user = await signInWithEmailAndPassword(auth, email, pass);
+
+      if (email !== ADMIN_EMAIL) {
+        msg.innerText = "Not authorized as admin!";
+        return;
+      }
+
+      msg.style.color = "green";
+      msg.innerText = "Login Success, Redirecting...";
+
+      setTimeout(() => {
+        window.location.href = "product-upload.html";
+      }, 1000);
+
+    } catch (error) {
+      msg.innerText = "Wrong Email or Password";
+    }
+  }
+
+  window.adminLogin = adminLogin;
+
+</script>
+
+</body>
+</html>

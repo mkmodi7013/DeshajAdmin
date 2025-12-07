@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logout - Deshaj Store</title>
+
+<style>
+  body {
+    font-family: Arial;
+    background: #f7f7f7;
+    text-align: center;
+    padding-top: 100px;
+  }
+  .box {
+    background: white;
+    width: 300px;
+    margin: auto;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #ccc;
+  }
+  h2 {
+    color: orange;
+  }
+  p {
+    margin: 10px 0;
+  }
+</style>
+
+</head>
+<body>
+
+<div class="box">
+  <h2>You Have Been Logged Out</h2>
+  <p>Redirecting to login page...</p>
+</div>
+
+<script>
+  // Remove all stored user data
+  localStorage.removeItem("mobile");
+  localStorage.removeItem("userLoggedIn");
+  localStorage.removeItem("cart");  // optional: clear cart on logout
+
+  // Redirect after 1.5 seconds
+  setTimeout(() => {
+    window.location.href = "login.html";
+  }, 1500);
+</script>
+
+</body>
+</html>

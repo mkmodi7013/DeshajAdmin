@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Product - Deshaj Store</title>
+
+<style>
+  body {
+    font-family: Arial;
+    background: #f7f7f7;
+    padding: 20px;
+  }
+
+  h2 {
+    text-align: center;
+    color: orange;
+    margin-bottom: 20px;
+  }
+
+  .form-box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 450px;
+    margin: auto;
+    box-shadow: 0 0 10px #ccc;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    background: orange;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 18px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  #status { text-align: center; font-weight: bold; }
+
+  /* product list */
+  .product-list {
+    max-width: 700px;
+    margin: 30px auto;
+  }
+  .product-card {
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    box-shadow: 0 0 10px #ccc;
+    display: flex;
+    gap: 15px;
+  }
+  .product-card img {
+    width: 90px;
+    height: 90px;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+  .edit-btn {
+    background: blue;
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  /* Edit Popup */
+  .popup {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    justify-content: center; align-items: center;
+  }
+  .popup-box {
+    background: #fff;
+    padding: 20px;
+    width: 350px;
+    border-radius: 10px;
+  }
+</style>
+</head>
+<body>
+<div id="header"></div>
+
+<script>
+  // Load header.html into this page
+  fetch('header.html')
+    .then(response => response.text())
+    .then(data => {
+      document.getElementById('header').innerHTML = data;
+    })
+    .catch(err => console.error('Header load error:', err));
+</script>
+<h2>Add Product (Admin)</h2>
+
+<div class="form-box">
+  <input type="text" id="name" placeholder="Product Name">
+  <input type="number" id="price" placeholder="Price (₹)">
+  <textarea id="desc" placeholder="Product Description"></textarea>
+  <select id="category">
+    <option value="Oil">Oil</option>
+    <option value="Grocery">Grocery</option>
+    <option value="Organic">Organic</option>
+  </select>
+  <input type="file" id="imageFile">
+  <button onclick="uploadProduct()">Upload Product</button>
+  <p id="status"></p>
+</div>
+
+<h2 style="margin-top:40px;">All Products</h2>
+<div class="product-list" id="productList"></div>
+
+<!-- EDIT POPUP -->
+<div class="popup" id="editPopup">
+  <div class="popup-box">
+    <h3>Edit Product</h3>
+    <input type="text" id="editName">
+    <input type="number" id="editPrice">
+    <textarea id="editDesc"></textarea>
+    <select id="editCategory">
+      <option value="Oil">Oil</option>
+      <option value="Grocery">Grocery</option>
+      <option value="Organic">Organic</option>
+    </select>
+    <input type="file" id="editImage">
+    <button onclick="updateProduct()">Update</button>
+    <button onclick="closePopup()">Cancel</button>
+  </div>
+</div>
+
+
+<script type="module">
+
+/* FIREBASE KEYS */
+const firebaseConfig = {
+  apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
+  authDomain: "apna-kitchen-acdcc.firebaseapp.com",
+  projectId: "apna-kitchen-acdcc",
+  storageBucket: "apna-kitchen-acdcc.appspot.com",
+  messagingSenderId: "129562055761",
+  appId: "1:129562055761:web:baa01f9fea6f8eed025470"
+};
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, serverTimestamp,
+  getDocs, doc, updateDoc
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+let editProductId = null;
+
+/************** ADD PRODUCT **************/
+async function uploadProduct() {
+  const name = document.getElementById("name").value.trim();
+  const price = Number(document.getElementById("price").value);
+  const desc = document.getElementById("desc").value.trim();
+  const category = document.getElementById("category").value;
+  const file = document.getElementById("imageFile").files[0];
+  const status = document.getElementById("status");
+
+  if (!name || !price || !desc || !file) {
+    status.innerText = "Please fill all fields";
+    status.style.color = "red";
+    return;
+  }
+
+  status.innerText = "Uploading image...";
+  status.style.color = "blue";
+
+  try {
+    const storageRef = ref(storage, "products/" + Date.now() + "_" + file.name);
+    await uploadBytes(storageRef, file);
+    const imageURL = await getDownloadURL(storageRef);
+
+    await addDoc(collection(db, "products"), {
+      name, price,
+      description: desc,
+      category,
+      image: imageURL,
+      createdAt: serverTimestamp()
+    });
+
+    status.innerText = "Product Uploaded!";
+    status.style.color = "green";
+
+    loadProducts(); // refresh list
+
+  } catch (err) {
+    status.innerText = err.message;
+    status.style.color = "red";
+  }
+}
+
+window.uploadProduct = uploadProduct;
+
+
+/************** LOAD PRODUCTS **************/
+async function loadProducts() {
+  const productList = document.getElementById("productList");
+  productList.innerHTML = "Loading...";
+
+  const querySnapshot = await getDocs(collection(db, "products"));
+
+  productList.innerHTML = "";
+
+  querySnapshot.forEach(docu => {
+    const p = docu.data();
+    const id = docu.id;
+
+    productList.innerHTML += `
+      <div class="product-card">
+        <img src="${p.image}">
+        <div style="flex:1">
+          <b>${p.name}</b><br>
+          ₹ ${p.price} <br>
+          <button class="edit-btn" onclick="openEdit('${id}', '${p.name}', '${p.price}', \`${p.description}\`, '${p.category}', '${p.image}')">
+            Edit
+          </button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+window.openEdit = function(id, name, price, desc, category) {
+  editProductId = id;
+
+  document.getElementById("editName").value = name;
+  document.getElementById("editPrice").value = price;
+  document.getElementById("editDesc").value = desc;
+  document.getElementById("editCategory").value = category;
+
+  document.getElementById("editPopup").style.display = "flex";
+}
+
+window.closePopup = function() {
+  document.getElementById("editPopup").style.display = "none";
+}
+
+
+/************** UPDATE PRODUCT **************/
+window.updateProduct = async function() {
+  const newName = document.getElementById("editName").value;
+  const newPrice = Number(document.getElementById("editPrice").value);
+  const newDesc = document.getElementById("editDesc").value;
+  const newCategory = document.getElementById("editCategory").value;
+  const newImageFile = document.getElementById("editImage").files[0];
+
+  let updatedData = {
+    name: newName,
+    price: newPrice,
+    description: newDesc,
+    category: newCategory
+  };
+
+  if (newImageFile) {
+    const imgRef = ref(storage, "products/" + Date.now() + "_" + newImageFile.name);
+    await uploadBytes(imgRef, newImageFile);
+    const url = await getDownloadURL(imgRef);
+    updatedData.image = url;
+  }
+
+  await updateDoc(doc(db, "products", editProductId), updatedData);
+
+  closePopup();
+  loadProducts();
+};
+
+loadProducts();
+
+</script>
+
+</body>
+</html>
