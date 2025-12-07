@@ -1,7 +1,7 @@
 {
   "name": "Deshaj Admin",
   "short_name": "Deshaj",
-  "description": "Admin panel for Deshaj Store - orders, inventory, reports",
+  "description": "Admin panel for Deshaj Admin - orders, inventory, reports",
   "start_url": "/admin/?source=pwa",
   "scope": "/admin/",
   "display": "standalone",

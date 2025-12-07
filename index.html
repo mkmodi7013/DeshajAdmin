@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Login - Deshaj Store</title>
+<title>Admin Login - Deshaj Admin</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ffffff">
 <script>
@@ -82,7 +82,7 @@
   <input type="password" id="password" placeholder="Password">
 
   <button onclick="adminLogin()">Login</button>
-  
+  <button id="installBtn" >Install App</button>
 
   <p id="msg"></p>
 </div>
@@ -145,6 +145,23 @@
   }
 
   window.adminLogin = adminLogin;
+  //.....................
+  let deferredPrompt;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById("installBtn").style.display = "block";
+});
+
+document.getElementById("installBtn").addEventListener("click", async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+  }
+});
+
 
 </script>
 

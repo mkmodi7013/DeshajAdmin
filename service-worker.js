@@ -1,4 +1,4 @@
-const CACHE_NAME = "deshaj-store-v1";
+const CACHE_NAME = "deshaj-Admin-v1";
 const urlsToCache = [
   "./",
   "./index.html",
