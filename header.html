@@ -60,18 +60,18 @@
 
 </div>
 <div style="background: orange; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
-  <h2 style="margin:0;">Deshaj Store</h2>
+  <h2 style="margin:0;">Deshaj Admin</h2>
   <nav>
-
+ <a href="index.html" style="color:white; margin-right:10px; text-decoration:none;">Home</a>
     <a href="index.html" style="color:white; margin-right:10px; text-decoration:none;">Logout</a>
-    <a href="admin-orders.html" style="color:white; margin-right:10px; text-decoration:none;">Orders</a>
+   
    
   </nav>
 </div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot } 
-from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFireAdmin, collection, onSnapshot } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-fireAdmin.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
@@ -83,7 +83,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = getFireAdmin(app);
 
 const bellBadge = document.getElementById("bellBadge");
 const bellIcon = document.getElementById("bellIcon");
