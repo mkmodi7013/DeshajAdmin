@@ -1,39 +1,34 @@
-const CACHE_NAME = "deshaj-Admin-v1";
-const urlsToCache = [
-  "./",
-  "./index.html",
-  "./product-upload.html",
-  "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png"
+const cacheName = "deshaj-admin-v1";
+const assetsToCache = [
+  "/admin-orders.html",
+  "/style.css",
+  "/header.html",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/index.html"
 ];
 
-
-// Install service worker and cache files
+// Install
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+    caches.open(cacheName).then(cache => cache.addAll(assetsToCache))
   );
-  self.skipWaiting();
 });
 
-// Activate service worker and remove old caches
+// Activate
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(keys => 
-      Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      )
+    caches.keys().then(keys =>
+      Promise.all(keys.map(key => {
+        if (key !== cacheName) return caches.delete(key);
+      }))
     )
   );
-  self.clients.claim();
 });
 
-// Fetch files from cache first, fallback to network
+// Fetch
 self.addEventListener("fetch", event => {
   event.respondWith(
-    caches.match(event.request).then(response => response || fetch(event.request))
+    caches.match(event.request).then(resp => resp || fetch(event.request))
   );
 });
-

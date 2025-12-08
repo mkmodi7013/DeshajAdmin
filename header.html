@@ -1,118 +1,136 @@
-<!-- header.html -->
- <!DOCTYPE html>
- <html lang="en">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-  <style>
-.header-icons {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login - Deshaj Admin</title>
 
-.bell-icon {
-  position: relative;
-  cursor: pointer;
-}
+<style>
+  body {
+    font-family: Arial;
+    background: #f7f7f7;
+    padding: 50px;
+  }
 
-.bell-icon img {
-  width: 26px;
-}
+  .box {
+    max-width: 350px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #ccc;
+  }
 
-.bell-badge {
-  position: absolute;
-  top: -5px;
-  right: -6px;
-  background: red;
-  color: white;
-  font-size: 11px;
-  padding: 3px 6px;
-  border-radius: 50%;
-  display: none;
-}
+  h2 {
+    text-align: center;
+    color: orange;
+  }
 
-.bell-shake {
-  animation: shake 0.4s ease-in-out;
-}
+  input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
 
-@keyframes shake {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(-15deg); }
-  50% { transform: rotate(15deg); }
-  75% { transform: rotate(-15deg); }
-  100% { transform: rotate(0deg); }
-}
+  button {
+    width: 100%;
+    padding: 12px;
+    background: orange;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 18px;
+    cursor: pointer;
+  }
+
+  #msg {
+    text-align: center;
+    color: red;
+    margin-top: 10px;
+  }
 </style>
+</head>
+<body>
 
+<div id="header"></div>
 
-
- </head>
- <body>
-  <div class="header-icons">
-  
-  <!-- Bell Notification -->
-  <div class="bell-icon" id="bellIcon">
-    <img src="bell.png" alt="Notifications">
-    <span id="bellBadge" class="bell-badge">0</span>
-  </div>
-
-</div>
-<div style="background: orange; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
-  <h2 style="margin:0;">Deshaj Admin</h2>
-  <nav>
- <a href="index.html" style="color:white; margin-right:10px; text-decoration:none;">Home</a>
-    <a href="index.html" style="color:white; margin-right:10px; text-decoration:none;">Logout</a>
-   
-   
-  </nav>
-</div>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFireAdmin, collection, onSnapshot } 
-from "https://www.gstatic.com/firebasejs/9.23.0/firebase-fireAdmin.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
-  authDomain: "apna-kitchen-acdcc.firebaseapp.com",
-  projectId: "apna-kitchen-acdcc",
-  storageBucket: "apna-kitchen-acdcc.appspot.com",
-  messagingSenderId: "129562055761",
-  appId: "1:129562055761:web:baa01f9fea6f8eed025470"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFireAdmin(app);
-
-const bellBadge = document.getElementById("bellBadge");
-const bellIcon = document.getElementById("bellIcon");
-
-let lastCount = 0;
-
-// Live order monitoring
-onSnapshot(collection(db, "orders"), (snapshot) => {
-
-  const pending = snapshot.docs.filter(d => d.data().status === "Pending").length;
-
-  // show badge
-  if(pending > 0) {
-    bellBadge.style.display = "inline-block";
-    bellBadge.innerText = pending;
-  } else {
-    bellBadge.style.display = "none";
-  }
-
-  // Shake if new order added
-  if(pending > lastCount) {
-    bellIcon.classList.add("bell-shake");
-    setTimeout(() => bellIcon.classList.remove("bell-shake"), 500);
-  }
-
-  lastCount = pending;
-});
+<script>
+  // Load header.html into this page
+  fetch('header.html')
+    .then(response => response.text())
+    .then(data => {
+      document.getElementById('header').innerHTML = data;
+    })
+    .catch(err => console.error('Header load error:', err));
 </script>
 
- </body>
- </html>
+<div class="box">
+  <h2>Admin Login</h2>
 
+  <input type="email" id="email" placeholder="Admin Email">
+  <input type="password" id="password" placeholder="Password">
+
+  <button onclick="adminLogin()">Login</button>
+
+  <p id="msg"></p>
+</div>
+
+<script type="module">
+  // Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
+    authDomain: "apna-kitchen-acdcc.firebaseapp.com",
+    projectId: "apna-kitchen-acdcc",
+    storageBucket: "apna-kitchen-acdcc.appspot.com",
+    messagingSenderId: "129562055761",
+    appId: "1:129562055761:web:baa01f9fea6f8eed025470"
+  };
+
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  const ADMIN_EMAIL = "mkmodi7013@gmail.com"; // Admin email
+
+  async function adminLogin() {
+    const email = document.getElementById("email").value;
+    const pass = document.getElementById("password").value;
+    const msg = document.getElementById("msg");
+
+    msg.innerText = "";
+    msg.style.color = "red";
+
+    if (!email || !pass) {
+      msg.innerText = "Enter Email & Password";
+      return;
+    }
+
+    try {
+      const user = await signInWithEmailAndPassword(auth, email, pass);
+
+      if (email !== ADMIN_EMAIL) {
+        msg.innerText = "Not authorized as admin!";
+        return;
+      }
+
+      msg.style.color = "green";
+      msg.innerText = "Login Success, Redirecting...";
+
+      setTimeout(() => {
+        window.location.href = "admin-orders.html";
+      }, 1000);
+
+    } catch (error) {
+      msg.innerText = "Wrong Email or Password";
+    }
+  }
+
+  window.adminLogin = adminLogin;
+</script>
+
+</body>
+</html>
