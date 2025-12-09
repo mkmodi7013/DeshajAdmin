@@ -53,17 +53,7 @@
 </head>
 <body>
 
-<div id="header"></div>
 
-<script>
-  // Load header.html into this page
-  fetch('header.html')
-    .then(response => response.text())
-    .then(data => {
-      document.getElementById('header').innerHTML = data;
-    })
-    .catch(err => console.error('Header load error:', err));
-</script>
 
 <div class="box">
   <h2>Admin Login</h2>
@@ -119,7 +109,7 @@
       msg.innerText = "Login Success, Redirecting...";
 
       setTimeout(() => {
-        window.location.href = "admin-orders.html";
+        window.location.href = "buttons.html";
       }, 1000);
 
     } catch (error) {

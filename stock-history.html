@@ -1,0 +1,61 @@
+<!-- stock-history.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Stock History</title>
+<style>
+  body{font-family:Arial;background:#f7f7f7;padding:20px}
+  .box{max-width:1000px;margin:24px auto;background:#fff;padding:16px;border-radius:8px}
+  table{width:100%;border-collapse:collapse}
+  th,td{border:1px solid #eee;padding:10px;text-align:left}
+  th{background:#f5f5f5}
+  .small{color:#666;font-size:13px}
+  button{padding:8px 10px;border-radius:6px;border:0;background:orange;color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h2>Stock Activity Log</h2>
+  <div style="margin-bottom:10px">
+    <button id="refreshBtn">Refresh</button>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Time</th><th>Action</th><th>Product</th><th>Old Qty</th><th>New Qty</th><th>By</th></tr>
+    </thead>
+    <tbody id="historyTable"><tr><td colspan="6">Loading...</td></tr></tbody>
+  </table>
+</div>
+
+<script type="module">
+import { db, fetchHistory } from './history-logger.js';
+
+const historyTable = document.getElementById('historyTable');
+const refreshBtn = document.getElementById('refreshBtn');
+
+async function loadHistory(){
+  historyTable.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+  const rows = await fetchHistory(200); // last 200
+  if(!rows || rows.length===0){ historyTable.innerHTML = '<tr><td colspan="6">No history</td></tr>'; return; }
+  historyTable.innerHTML = rows.map(r=>{
+    const time = new Date(r.time?.toDate?.() || Date.now()).toLocaleString();
+    return `<tr>
+      <td class="small">${time}</td>
+      <td>${r.action}</td>
+      <td>${r.product}</td>
+      <td>${r.oldQty ?? '-'}</td>
+      <td>${r.newQty ?? '-'}</td>
+      <td class="small">${r.updatedBy ?? 'Admin'}</td>
+    </tr>`;
+  }).join('');
+}
+
+refreshBtn.addEventListener('click', loadHistory);
+await loadHistory();
+</script>
+
+</body>
+</html>

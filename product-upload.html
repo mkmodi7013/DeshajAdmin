@@ -98,17 +98,7 @@
 </style>
 </head>
 <body>
-<div id="header"></div>
 
-<script>
-  // Load header.html into this page
-  fetch('header.html')
-    .then(response => response.text())
-    .then(data => {
-      document.getElementById('header').innerHTML = data;
-    })
-    .catch(err => console.error('Header load error:', err));
-</script>
 <h2>Add Product (Admin)</h2>
 
 <div class="form-box">
