@@ -172,6 +172,11 @@ function displayOrders(filter = activeFilter){
         <p><strong>${order.user.name}</strong> | ${order.user.mobile} | ID: ${order.id}
           <span class="status-badge ${badgeClass}">${order.status}</span>
         </p>
+        
+        <button style="background:green;color:white;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;"
+      onclick="window.location.href='invoice.html?id=${order.id}'">
+      Invoice
+    </button>
         <p>Total: ₹${order.total || 0}</p>
         <select onchange="updateStatus('${order.id}', this.value)">
           <option value="Pending" ${order.status==="Pending"?"selected":""}>Pending</option>

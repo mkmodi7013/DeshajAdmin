@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice - Deshaj Store</title>
+
+<style>
+body { font-family: Arial; background: #f7f7f7; padding: 10px; }
+.invoice-container { width: 210mm; margin: auto; padding: 10mm; background: #fff; box-sizing: border-box; }
+.invoice-box { border: 1px solid #000; padding: 10px; margin-bottom: 20px; }
+h2 { margin:0; }
+.header-flex { display: flex; justify-content: space-between; flex-wrap: wrap; }
+.customer-details, .invoice-details { margin-top: 10px; }
+.table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.table th, .table td { border: 1px solid #000; padding: 5px; }
+.table th { background: #eee; }
+.qr-box { margin-top: 10px; text-align: center; }
+.signature-box { margin-top: 20px; text-align: right; }
+.signature-line { border-top: 1px solid #000; width: 150px; float: right; }
+.btn { background: orange; color: white; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; margin-top: 10px; }
+@media print { body { background: #fff; padding:0; } .btn { display:none; } .invoice-container { width:100%; padding:0; } .invoice-box { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<div id="loading">Loading invoice...</div>
+
+<div class="invoice-container" id="invoice" style="display:none;">
+  <div class="invoice-box" id="copy1"></div>
+  <div class="invoice-box" id="copy2"></div>
+</div>
+
+<button onclick="downloadAndUploadPDF()" class="btn">Download & Upload PDF</button>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
+  authDomain: "apna-kitchen-acdcc.firebaseapp.com",
+  projectId: "apna-kitchen-acdcc",
+  storageBucket: "apna-kitchen-acdcc.appspot.com",
+  messagingSenderId: "129562055761",
+  appId: "1:129562055761:web:baa01f9fea6f8eed025470"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+// Get order ID from URL
+const params = new URLSearchParams(window.location.search);
+const orderId = params.get("id");
+if(!orderId){ alert("Order ID missing"); }
+
+// Load order + customer
+async function loadInvoice(){
+  const orderRef = doc(db,"orders",orderId);
+  const orderSnap = await getDoc(orderRef);
+  if(!orderSnap.exists()){ alert("Order not found!"); return; }
+
+  const order = orderSnap.data();
+
+  // Customer info
+  let user = { name:"-", address:"-", pincode:"-" };
+  if(order.mobile){
+    const userRef = doc(db,"users",order.mobile);
+    const userSnap = await getDoc(userRef);
+    if(userSnap.exists()) user = userSnap.data();
+  }
+
+  // Invoice number & date
+  const invoiceNumber = "DS-"+new Date().toISOString().replace(/[-:T]/g,"").slice(0,14);
+  const invoiceDate = new Date().toLocaleString();
+
+  // Items
+  let itemsHTML = "";
+  (order.items||[]).forEach(item=>{
+    itemsHTML += `<tr>
+      <td>${item.name}</td>
+      <td>${item.qty}</td>
+      <td>₹${item.price}</td>
+      <td>₹${item.price*item.qty}</td>
+    </tr>`;
+  });
+
+  const singleInvoiceHTML = `
+    <div class="header-flex">
+      <div>
+        <h2>Deshaj Store</h2>
+        <p><b>Phone:</b> +91 9304939412</p>
+        <p><b>Address:</b> East Sikariya, Bihar</p>
+      </div>
+      <div class="invoice-details">
+        <p><b>Invoice ID:</b> ${invoiceNumber}</p>
+        <p><b>Date:</b> ${invoiceDate}</p>
+      </div>
+    </div>
+
+    <div class="customer-details">
+      <h4>Customer Details</h4>
+      <p><b>Name:</b> ${user.name}</p>
+      <p><b>Mobile:</b> ${order.mobile}</p>
+      <p><b>Address:</b> ${user.address}</p>
+      <p><b>Pincode:</b> ${user.pincode}</p>
+    </div>
+
+    <h4>Order Items</h4>
+    <table class="table">
+      <thead><tr><th>Name</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+      <tbody>${itemsHTML}</tbody>
+    </table>
+
+    <h4 style="text-align:right;">Grand Total: ₹ ${order.total}</h4>
+
+    <div class="qr-box">
+      <h4>Scan & Pay (UPI)</h4>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=upi://pay?pa=9304939412@upi&pn=Deshaj Store&am=${order.total}&cu=INR">
+      <p><b>UPI ID:</b> 9304939412@upi</p>
+    </div>
+
+    <div class="signature-box">
+      <p>Authorized Signature</p>
+      <div class="signature-line"></div>
+    </div>
+  `;
+
+  document.getElementById("copy1").innerHTML = singleInvoiceHTML;
+  document.getElementById("copy2").innerHTML = singleInvoiceHTML;
+
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("invoice").style.display = "block";
+
+  // Save invoiceNumber globally for PDF
+  window.invoiceNumber = invoiceNumber;
+}
+loadInvoice();
+
+// Make download/upload function global
+window.downloadAndUploadPDF = async function() {
+  const element = document.getElementById("invoice");
+
+  // Generate PDF Blob
+  const opt = { margin:10, filename:"invoice.pdf", html2canvas:{scale:2}, jsPDF:{unit:'mm', format:'a4', orientation:'p'}, pagebreak:{mode:['avoid-all']} };
+  const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+
+  // Download PDF for user
+  html2pdf().set(opt).from(element).save(`Invoice_${window.invoiceNumber}.pdf`);
+
+  // Upload to Firebase Storage
+  const pdfRef = ref(storage, `invoices/Invoice_${window.invoiceNumber}.pdf`);
+  await uploadBytes(pdfRef, pdfBlob);
+  alert("Invoice uploaded to Firebase Storage in 'invoices/' folder!");
+}
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</body>
+</html>
