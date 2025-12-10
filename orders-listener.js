@@ -1,28 +1,24 @@
+// orders-listener.js
 import { db, logHistory } from './history-logger.js';
 import {
-  collection, query, where, onSnapshot,
-  getDocs, runTransaction, doc, updateDoc
+  collection, query, where, onSnapshot, getDocs, doc, runTransaction, updateDoc
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const ordersRef = collection(db, 'orders');
 const stockRef = collection(db, 'stock');
 
-// Listen to Processed orders
+// Listen to all Processed orders
 const q = query(ordersRef, where('status', '==', 'Processed'));
 
 onSnapshot(q, async (snapshot) => {
-
-  snapshot.docChanges().forEach(async (change) => {
-
-    if (change.type !== "added" && change.type !== "modified") return;
-
-    const orderDoc = change.doc;
+  snapshot.forEach(async (orderDoc) => {
     const order = orderDoc.data();
     const orderId = orderDoc.id;
 
-    // Skip if already reduced
-    if (order.stockReduced) return;
+    // Skip if already processed
+    if(order.stockProcessed) return;
 
+    // Skip if no items
     if (!order.items || !Array.isArray(order.items) || order.items.length === 0) {
       await logHistory({ action: 'no-items', orderId, note: 'Order has no items' });
       return;
@@ -35,10 +31,10 @@ onSnapshot(q, async (snapshot) => {
           continue;
         }
 
-        // Find stock by name
+        // Find stock doc matching product name
         const stockSnap = await getDocs(stockRef);
         const stockDocs = stockSnap.docs.filter(d =>
-          d.data().name?.trim().toLowerCase() === item.name.trim().toLowerCase()
+          d.data().product?.trim().toLowerCase() === item.name.trim().toLowerCase()
         );
 
         if (stockDocs.length === 0) {
@@ -47,23 +43,23 @@ onSnapshot(q, async (snapshot) => {
             product: item.name,
             oldQty: null,
             newQty: null,
-            note: `Stock not found (Order ${orderId})`
+            note: `Stock not found (Order ${orderId})`,
+            orderId
           });
           continue;
         }
 
-        const stockDoc = stockDocs[0];
-        const stockDocRef = doc(db, 'stock', stockDoc.id);
+        const stockDocRef = doc(db, 'stock', stockDocs[0].id);
 
-        // Transaction to decrement stock
+        // Use transaction to safely decrement stock
         await runTransaction(db, async (t) => {
           const sdoc = await t.get(stockDocRef);
-          const oldQty = sdoc.data().qty ?? 0;
+          const oldQty = sdoc.data().quantity ?? 0;
           let newQty = oldQty - item.qty;
           if (newQty < 0) newQty = 0;
-          t.update(stockDocRef, { qty: newQty });
 
-          // Log inside transaction
+          t.update(stockDocRef, { quantity: newQty });
+
           await logHistory({
             action: 'auto-minus',
             product: item.name,
@@ -83,10 +79,10 @@ onSnapshot(q, async (snapshot) => {
           orderId
         });
       }
-    } // end items loop
+    }
 
-    // Mark order as stock reduced
-    await updateDoc(doc(db, 'orders', orderId), { stockReduced: true });
+    // Mark order as stockProcessed = true to prevent duplicate auto-minus
+    await updateDoc(doc(db, 'orders', orderId), { stockProcessed: true });
 
-  }); // end docChanges.forEach
+  });
 });
