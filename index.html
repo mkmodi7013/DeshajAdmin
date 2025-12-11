@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/DeshajAdmin/manifest.json">
+
+<meta name="theme-color" content="#ff8c00">
+
 <title>Admin Login - Deshaj Admin</title>
 
 <style>
@@ -123,6 +127,14 @@
   document.getElementById("password").addEventListener("keypress", (e) => {
     if(e.key === "Enter") adminLogin();
   });
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/DeshajAdmin/sw.js")
+
+    .then(() => console.log("Service Worker Registered"))
+    .catch((err) => console.log("SW Error:", err));
+}
 </script>
 
 </body>

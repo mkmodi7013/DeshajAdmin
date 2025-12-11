@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Serviceable Pincodes</title>
+<style>
+  body { font-family: Arial; background: #f7f7f7; padding: 20px; }
+  .box { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
+  input { width: calc(100% - 24px); padding: 10px; margin-top: 10px; font-size: 16px; border: 1px solid #ddd; border-radius: 5px; }
+  button { margin-top: 10px; padding: 10px 15px; background: orange; color: white; border: none; border-radius: 6px; cursor: pointer; }
+  ul { margin-top: 15px; padding-left: 20px; }
+  li { margin: 6px 0; }
+  li span { margin-right: 10px; }
+  li button { padding: 2px 6px; background: red; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h2>Manage Serviceable Pincodes</h2>
+  <input type="text" id="pinInput" placeholder="Enter 6-digit pincode">
+  <button id="addBtn">Add Pincode</button>
+
+  <h3>Existing Pincodes:</h3>
+  <ul id="pinList">
+    Loading...
+  </ul>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, where } 
+    from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
+    authDomain: "apna-kitchen-acdcc.firebaseapp.com",
+    projectId: "apna-kitchen-acdcc",
+    storageBucket: "apna-kitchen-acdcc.appspot.com",
+    messagingSenderId: "129562055761",
+    appId: "1:129562055761:web:baa01f9fea6f8eed025470"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const pinInput = document.getElementById("pinInput");
+  const addBtn = document.getElementById("addBtn");
+  const pinList = document.getElementById("pinList");
+
+  async function loadPincodes() {
+    pinList.innerHTML = "Loading...";
+    const q = query(collection(db, "serviceable_pincodes"), orderBy("pincode", "asc"));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      pinList.innerHTML = "<li>No pincodes added yet.</li>";
+      return;
+    }
+    pinList.innerHTML = "";
+    snap.forEach(docSnap => {
+      const pin = docSnap.data().pincode;
+      const li = document.createElement("li");
+      li.innerHTML = `<span>${pin}</span><button onclick="deletePin('${docSnap.id}')">Delete</button>`;
+      pinList.appendChild(li);
+    });
+  }
+
+  addBtn.addEventListener("click", async () => {
+    const pin = pinInput.value.trim();
+    if(!/^[0-9]{6}$/.test(pin)) {
+      alert("Enter valid 6-digit pincode");
+      return;
+    }
+
+    // Check duplicate
+    const q = query(collection(db, "serviceable_pincodes"), where("pincode", "==", pin));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      alert("This pincode already exists!");
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "serviceable_pincodes"), { pincode: pin });
+      pinInput.value = "";
+      loadPincodes();
+    } catch (err) {
+      console.error(err);
+      alert("Error adding pincode");
+    }
+  });
+
+  window.deletePin = async function(id) {
+    if (!confirm("Delete this pincode?")) return;
+    try {
+      await deleteDoc(doc(db, "serviceable_pincodes", id));
+      loadPincodes();
+    } catch(err) {
+      console.error(err);
+      alert("Error deleting pincode");
+    }
+  };
+
+  loadPincodes();
+
+</script>
+
+</body>
+</html>
