@@ -69,6 +69,22 @@
 
   <p id="msg"></p>
 </div>
+<button id="installBtn" style="
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  background: #ff6600;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  display: none;
+  z-index: 9999;
+  cursor: pointer;">
+  Install App
+</button>
+
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -134,6 +150,31 @@ if ("serviceWorker" in navigator) {
     .then(() => console.log("Service Worker Registered"))
     .catch((err) => console.log("SW Error:", err));
 }
+</script>
+<script>
+let deferredPrompt;
+const installBtn = document.getElementById('installBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.style.display = 'block'; // show button
+});
+
+// When user clicks install button
+installBtn.addEventListener('click', async () => {
+    installBtn.style.display = 'none';
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+    }
+});
+
+// If already installed → hide button
+window.addEventListener('appinstalled', () => {
+    installBtn.style.display = 'none';
+});
 </script>
 
 </body>
