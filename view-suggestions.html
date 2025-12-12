@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suggestions - Admin Panel</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .search-box {
+      margin: 15px 0;
+      text-align: center;
+    }
+
+    input {
+      padding: 10px;
+      width: 80%;
+      max-width: 400px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    table {
+      width: 100%;
+      background: #fff;
+      border-collapse: collapse;
+      margin-top: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    table th, table td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+
+    table th {
+      background: #333;
+      color: #fff;
+    }
+
+    button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    .edit-btn {
+      background: #1976d2;
+    }
+
+    .delete-btn {
+      background: #d32f2f;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Suggestions List</h2>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search suggestion...">
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Suggestion</th>
+        <th>Created At</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="suggestionTable"></tbody>
+  </table>
+
+  <!-- Firebase Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { 
+      getFirestore, collection, getDocs, doc, updateDoc, deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    // Your Firebase Config
+    const firebaseConfig = {
+  apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
+  authDomain: "apna-kitchen-acdcc.firebaseapp.com",
+  projectId: "apna-kitchen-acdcc",
+  storageBucket: "apna-kitchen-acdcc.appspot.com",
+  messagingSenderId: "129562055761",
+  appId: "1:129562055761:web:baa01f9fea6f8eed025470"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const tableBody = document.getElementById("suggestionTable");
+    const searchInput = document.getElementById("searchInput");
+
+    let allSuggestions = [];
+
+    // Fetch suggestions
+    async function loadSuggestions() {
+      const ref = collection(db, "suggestions");
+      const snapshot = await getDocs(ref);
+
+      allSuggestions = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      display(allSuggestions);
+    }
+
+    // Display table
+    function display(data) {
+      tableBody.innerHTML = "";
+
+      data.forEach((item, index) => {
+        const createdAt = item.createdAt
+          ? new Date(item.createdAt).toLocaleString()
+          : "-";
+
+        const row = `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${item.suggestion || ""}</td>
+            <td>${createdAt}</td>
+            <td>
+              <button class="edit-btn" onclick="editSug('${item.id}', '${item.suggestion || ""}')">Edit</button>
+              <button class="delete-btn" onclick="deleteSug('${item.id}')">Delete</button>
+            </td>
+          </tr>
+        `;
+        tableBody.innerHTML += row;
+      });
+    }
+
+    // Search
+    searchInput.addEventListener("input", () => {
+      const v = searchInput.value.toLowerCase();
+      const results = allSuggestions.filter(s =>
+        (s.suggestion || "").toLowerCase().includes(v)
+      );
+      display(results);
+    });
+
+    // Edit suggestion
+    window.editSug = async function(id, oldValue) {
+      const newValue = prompt("Edit suggestion:", oldValue);
+      if (!newValue) return;
+
+      await updateDoc(doc(db, "suggestions", id), {
+        suggestion: newValue
+      });
+
+      alert("Updated successfully!");
+      loadSuggestions();
+    };
+
+    // Delete suggestion
+    window.deleteSug = async function(id) {
+      if (!confirm("Delete this suggestion?")) return;
+
+      await deleteDoc(doc(db, "suggestions", id));
+
+      alert("Deleted!");
+      loadSuggestions();
+    };
+
+    loadSuggestions();
+  </script>
+
+</body>
+</html>

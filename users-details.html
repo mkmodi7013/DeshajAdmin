@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Users List - Deshaj Store</title>
+
+<style>
+body {
+  font-family: Arial;
+  padding: 20px;
+  background: #f7f7f7;
+}
+h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+#searchInput {
+  width: 100%;
+  max-width: 400px;
+  padding: 8px;
+  margin: 10px auto 20px auto;
+  display: block;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  box-shadow: 0 0 10px #ccc;
+}
+th, td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+th {
+  background: orange;
+  color: white;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+
+/* Table buttons */
+button.action-btn {
+  padding: 5px 10px;
+  margin: 0 2px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 13px;
+  min-width: 50px;      /* ensures buttons are visible */
+  display: inline-block; /* prevents collapsing */
+}
+
+/* Specific button colors */
+button.save { background: #4caf50; }
+button.cancel { background: #888; }
+button.delete { background: #f44336; }
+button.edit { background: #1a0af7; }
+
+/* Inline edit inputs */
+input.inline-edit {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px;
+  font-size: 14px;
+  min-width: 60px; /* ensures input does not shrink too small */
+}
+td.actions {
+  white-space: nowrap;
+  width: 140px; /* enough space for 2-3 buttons */
+}
+
+</style>
+</head>
+<body>
+
+<h2>Registered Users</h2>
+<input type="text" id="searchInput" placeholder="Search users by name, mobile, address, or pincode">
+
+<table id="usersTable">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Name</th>
+      <th>Mobile</th>
+      <th>Address</th>
+      <th>Pincode</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td colspan="6">Loading...</td></tr>
+  </tbody>
+</table>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
+  authDomain: "apna-kitchen-acdcc.firebaseapp.com",
+  projectId: "apna-kitchen-acdcc",
+  storageBucket: "apna-kitchen-acdcc.appspot.com",
+  messagingSenderId: "129562055761",
+  appId: "1:129562055761:web:baa01f9fea6f8eed025470"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let usersData = []; // store all users
+let editingId = null; // currently editing user
+
+// Load users
+async function loadUsers() {
+  const tableBody = document.querySelector("#usersTable tbody");
+  tableBody.innerHTML = "<tr><td colspan='6'>Loading...</td></tr>";
+
+  try {
+    const snap = await getDocs(collection(db,"users"));
+    usersData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderTable(usersData);
+  } catch(e){
+    console.error(e);
+    tableBody.innerHTML="<tr><td colspan='6'>Failed to load users.</td></tr>";
+  }
+}
+
+// Render table
+function renderTable(data) {
+  const tableBody = document.querySelector("#usersTable tbody");
+  if(data.length===0){ tableBody.innerHTML="<tr><td colspan='6'>No users found.</td></tr>"; return; }
+
+  let html="";
+  data.forEach((u,index)=>{
+    html+=`
+      <tr id="row-${u.id}">
+        <td>${index+1}</td>
+        <td class="name">${u.name||""}</td>
+        <td class="mobile">${u.mobile||""}</td>
+        <td class="address">${u.address||""}</td>
+        <td class="pincode">${u.pincode||""}</td>
+        <td class="actions">
+          <button class="action-btn edit" onclick="editRow('${u.id}')">Edit</button>
+          <button class="action-btn delete" onclick="deleteUser('${u.id}')">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+  tableBody.innerHTML = html;
+}
+
+// Search
+document.getElementById("searchInput").addEventListener("input",(e)=>{
+  const val=e.target.value.toLowerCase();
+  const filtered=usersData.filter(u=>{
+    return (u.name||"").toLowerCase().includes(val)
+        || (u.mobile||"").toLowerCase().includes(val)
+        || (u.address||"").toLowerCase().includes(val)
+        || (u.pincode||"").toLowerCase().includes(val);
+  });
+  renderTable(filtered);
+});
+
+// Inline edit
+window.editRow = (id)=>{
+  if(editingId) return alert("Finish editing the current row first!");
+  editingId=id;
+  const row=document.getElementById("row-"+id);
+  const name=row.querySelector(".name").innerText;
+  const mobile=row.querySelector(".mobile").innerText;
+  const address=row.querySelector(".address").innerText;
+  const pincode=row.querySelector(".pincode").innerText;
+
+  row.querySelector(".name").innerHTML=`<input class="inline-edit" value="${name}">`;
+  row.querySelector(".mobile").innerHTML=`<input class="inline-edit" value="${mobile}">`;
+  row.querySelector(".address").innerHTML=`<input class="inline-edit" value="${address}">`;
+  row.querySelector(".pincode").innerHTML=`<input class="inline-edit" value="${pincode}">`;
+
+  row.querySelector(".actions").innerHTML=`
+    <button class="action-btn save" onclick="saveRow('${id}')">Save</button>
+    <button class="action-btn cancel" onclick="cancelEdit()">Cancel</button>
+  `;
+
+  // Add Enter/Escape key events
+  row.querySelectorAll("input.inline-edit").forEach(input=>{
+    input.addEventListener("keydown",(e)=>{
+      if(e.key==="Enter"){ saveRow(id); }
+      if(e.key==="Escape"){ cancelEdit(); }
+    });
+  });
+
+  // Focus on first input
+  row.querySelector(".name input").focus();
+}
+
+// Save changes
+window.saveRow = async (id)=>{
+  const row=document.getElementById("row-"+id);
+  const updatedData={
+    name: row.querySelector(".name input").value.trim(),
+    mobile: row.querySelector(".mobile input").value.trim(),
+    address: row.querySelector(".address input").value.trim(),
+    pincode: row.querySelector(".pincode input").value.trim()
+  };
+  try{
+    await updateDoc(doc(db,"users",id), updatedData);
+    editingId=null;
+    loadUsers();
+    alert("User updated successfully!");
+  }catch(e){ console.error(e); alert("Failed to update."); }
+}
+
+// Cancel edit
+window.cancelEdit = ()=>{
+  editingId=null;
+  renderTable(usersData);
+}
+
+// Delete user
+window.deleteUser = async(id)=>{
+  if(!confirm("Are you sure you want to delete this user?")) return;
+  try{
+    await deleteDoc(doc(db,"users",id));
+    loadUsers();
+    alert("User deleted successfully.");
+  }catch(e){console.error(e); alert("Failed to delete.");}
+}
+
+loadUsers();
+</script>
+
+</body>
+</html>
