@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Delivery Details</title>
+<style>
+body{font-family:Arial;background:#f4f6f8;padding:20px}
+.card{background:#fff;max-width:900px;margin:auto;padding:20px;border-radius:6px;box-shadow:0 0 10px #ccc;}
+h2,h3{text-align:center}
+p{margin:6px 0}
+b{color:#444}
+table{width:100%;border-collapse:collapse;margin-top:15px}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+th{background:orange;color:#fff}
+tr:nth-child(even){background:#f9f9f9}
+input{width:100%;padding:6px;box-sizing:border-box}
+button{padding:6px 12px;border:none;border-radius:4px;cursor:pointer;margin-top:5px;}
+.add{background:#2196f3;color:#fff}
+.save{background:#4caf50;color:#fff}
+.back{color:#1976d2;cursor:pointer;display:inline-block;margin-bottom:10px}
+.total-row td{font-weight:bold;background:#eee;}
+</style>
+</head>
+<body>
+
+<div class="card">
+<span class="back" onclick="history.back()">← Back</span>
+
+<h2>User Details</h2>
+<div id="userBox">Loading...</div>
+
+<h3>Delivery Register (Month Wise, Multiple Items)</h3>
+
+<table id="monthTable">
+<thead>
+<tr>
+  <th>Month</th>
+  <th>Items</th>
+  <th>Quantity</th>
+  <th>Amount</th>
+</tr>
+</thead>
+<tbody></tbody>
+<tfoot>
+<tr class="total-row">
+  <td colspan="3">Overall Total</td>
+  <td id="overallTotal">0</td>
+</tr>
+</tfoot>
+</table>
+
+<button class="add" onclick="addRow()">+ Add Row</button>
+<button class="save" onclick="save()">Save</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+const firebaseConfig={
+  apiKey:"AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
+  authDomain:"apna-kitchen-acdcc.firebaseapp.com",
+  projectId:"apna-kitchen-acdcc"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const mobile = new URLSearchParams(location.search).get("mobile");
+const userBox = document.getElementById("userBox");
+const tbody = document.querySelector("#monthTable tbody");
+const overallTotalEl = document.getElementById("overallTotal");
+
+/* Load user + delivery data */
+async function load(){
+  if(!mobile){ userBox.innerHTML="Mobile not found"; return; }
+
+  // User details
+  const uSnap = await getDoc(doc(db,"users",mobile));
+  const u = uSnap.exists()? uSnap.data(): {};
+  userBox.innerHTML = `
+<p><b>Name:</b> ${u.name||""}</p>
+<p><b>Mobile:</b> ${mobile}</p>
+<p><b>Address:</b> ${u.address||""}</p>
+<p><b>Pincode:</b> ${u.pincode||""}</p>
+`;
+
+  // Delivery data
+  const dSnap = await getDoc(doc(db,"delivery_register",mobile));
+  const months = dSnap.exists()? dSnap.data().months || {} : {};
+  tbody.innerHTML = "";
+
+  const sortedMonths = Object.keys(months).sort();
+  if(sortedMonths.length === 0){
+    addRow(); // empty row
+  } else {
+    sortedMonths.forEach(m => {
+      months[m].forEach(item => {
+        addRow(m, item.items || "", item.quantity || "", item.amount || "");
+      });
+    });
+  }
+  calculateTotal();
+}
+
+/* Add row */
+function addRow(month="", items="", qty="", amt=""){
+  tbody.insertAdjacentHTML("beforeend",`
+<tr data-month>
+<td><input value="${month}" placeholder="YYYY-MM"></td>
+<td><input value="${items}"></td>
+<td><input value="${qty}"></td>
+<td><input value="${amt}" oninput="calculateTotal()"></td>
+</tr>
+`);
+}
+
+/* Calculate overall total */
+function calculateTotal(){
+  let total=0;
+  tbody.querySelectorAll("tr").forEach(r=>{
+    const amt = parseFloat(r.children[3].querySelector("input").value)||0;
+    total += amt;
+  });
+  overallTotalEl.innerText = total.toFixed(2);
+}
+
+window.addRow = () => {
+  const d = new Date();
+  const m = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+  addRow(m,"","","");
+};
+
+/* Save to Firestore */
+window.save = async ()=>{
+  const months = {};
+
+  tbody.querySelectorAll("tr").forEach(r=>{
+    const m = r.children[0].querySelector("input").value.trim();
+    if(!m) return;
+    const obj = {
+      items: r.children[1].querySelector("input").value.trim(),
+      quantity: r.children[2].querySelector("input").value.trim(),
+      amount: r.children[3].querySelector("input").value.trim()
+    };
+    if(!months[m]) months[m] = [];
+    months[m].push(obj);
+  });
+
+  await setDoc(doc(db,"delivery_register",mobile),{
+    mobile,
+    months,
+    updatedAt: serverTimestamp()
+  },{merge:true});
+
+  alert("Delivery data saved successfully");
+  calculateTotal();
+};
+
+load();
+</script>
+</body>
+</html>

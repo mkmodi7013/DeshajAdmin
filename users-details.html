@@ -41,7 +41,6 @@ th {
 }
 tr:nth-child(even) { background: #f9f9f9; }
 
-/* Table buttons */
 button.action-btn {
   padding: 5px 10px;
   margin: 0 2px;
@@ -50,29 +49,32 @@ button.action-btn {
   cursor: pointer;
   color: #fff;
   font-size: 13px;
-  min-width: 50px;      /* ensures buttons are visible */
-  display: inline-block; /* prevents collapsing */
+  min-width: 50px;
+  display: inline-block;
 }
 
-/* Specific button colors */
 button.save { background: #4caf50; }
 button.cancel { background: #888; }
 button.delete { background: #f44336; }
 button.edit { background: #1a0af7; }
 
-/* Inline edit inputs */
 input.inline-edit {
   width: 100%;
   box-sizing: border-box;
   padding: 6px;
   font-size: 14px;
-  min-width: 60px; /* ensures input does not shrink too small */
+  min-width: 60px;
 }
 td.actions {
   white-space: nowrap;
-  width: 140px; /* enough space for 2-3 buttons */
+  width: 180px;
 }
 
+a.mobile-link {
+  color: #1976d2;
+  cursor: pointer;
+  text-decoration: underline;
+}
 </style>
 </head>
 <body>
@@ -112,8 +114,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let usersData = []; // store all users
-let editingId = null; // currently editing user
+let usersData = [];
+let editingId = null;
 
 // Load users
 async function loadUsers() {
@@ -141,7 +143,11 @@ function renderTable(data) {
       <tr id="row-${u.id}">
         <td>${index+1}</td>
         <td class="name">${u.name||""}</td>
-        <td class="mobile">${u.mobile||""}</td>
+        <td class="mobile">
+          <a class="mobile-link" href="user_register_details.html?mobile=${u.mobile}">
+            ${u.mobile||""}
+          </a>
+        </td>
         <td class="address">${u.address||""}</td>
         <td class="pincode">${u.pincode||""}</td>
         <td class="actions">
@@ -186,7 +192,6 @@ window.editRow = (id)=>{
     <button class="action-btn cancel" onclick="cancelEdit()">Cancel</button>
   `;
 
-  // Add Enter/Escape key events
   row.querySelectorAll("input.inline-edit").forEach(input=>{
     input.addEventListener("keydown",(e)=>{
       if(e.key==="Enter"){ saveRow(id); }
@@ -194,7 +199,6 @@ window.editRow = (id)=>{
     });
   });
 
-  // Focus on first input
   row.querySelector(".name input").focus();
 }
 
