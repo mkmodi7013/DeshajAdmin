@@ -85,11 +85,23 @@ a.mobile-link {
 <table id="usersTable">
   <thead>
     <tr>
-      <th>#</th>
+     <th>#</th>
       <th>Name</th>
       <th>Mobile</th>
       <th>Address</th>
-      <th>Pincode</th>
+      <th>nov 25</th>
+      <th>dec 25</th>
+      <th>jan 26</th>
+      <th>feb 26</th>
+      <th>march 26</th>
+      <th>april 26</th>
+      <th>may 26</th>
+      <th>june 26</th>
+      <th>july 26</th>
+      <th>aug 26</th>
+      <th>sep 26</th>
+      <th>oct 26</th>
+      <th>Total Amount</th>
       <th>Actions</th>
     </tr>
   </thead>
@@ -149,7 +161,19 @@ function renderTable(data) {
           </a>
         </td>
         <td class="address">${u.address||""}</td>
-        <td class="pincode">${u.pincode||""}</td>
+       <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
         <td class="actions">
           <button class="action-btn edit" onclick="editRow('${u.id}')">Edit</button>
           <button class="action-btn delete" onclick="deleteUser('${u.id}')">Delete</button>
