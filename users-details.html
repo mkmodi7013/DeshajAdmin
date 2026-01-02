@@ -3,263 +3,217 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Users List - Deshaj Store</title>
+<title>Monthly Register</title>
 
 <style>
-body {
+body{
   font-family: Arial;
-  padding: 20px;
-  background: #f7f7f7;
-}
-h2 {
-  text-align: center;
-  margin-bottom: 10px;
-}
-#searchInput {
-  width: 100%;
-  max-width: 400px;
-  padding: 8px;
-  margin: 10px auto 20px auto;
-  display: block;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  box-shadow: 0 0 10px #ccc;
-}
-th, td {
-  padding: 12px;
-  border: 1px solid #ddd;
-  text-align: left;
-}
-th {
-  background: orange;
-  color: white;
-}
-tr:nth-child(even) { background: #f9f9f9; }
-
-button.action-btn {
-  padding: 5px 10px;
-  margin: 0 2px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  color: #fff;
-  font-size: 13px;
-  min-width: 50px;
-  display: inline-block;
+  background:#f7f7f7;
+  padding:20px;
 }
 
-button.save { background: #4caf50; }
-button.cancel { background: #888; }
-button.delete { background: #f44336; }
-button.edit { background: #1a0af7; }
+h2{text-align:center}
 
-input.inline-edit {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px;
-  font-size: 14px;
-  min-width: 60px;
-}
-td.actions {
-  white-space: nowrap;
-  width: 180px;
+#searchInput{
+  width:100%;
+  max-width:400px;
+  padding:8px;
+  margin:10px auto 20px;
+  display:block;
+  border:1px solid #ccc;
+  border-radius:5px;
 }
 
-a.mobile-link {
-  color: #1976d2;
-  cursor: pointer;
-  text-decoration: underline;
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
 }
+
+th,td{
+  border:1px solid #ddd;
+  padding:8px;
+  text-align:center;
+}
+
+th{
+  background:orange;
+  color:#fff;
+}
+
+td.name{
+  font-weight:bold;
+}
+
+tr:nth-child(even){
+  background:#f9f9f9;
+}
+
+/* ===== INPUT STYLE ===== */
+.month-input{
+  width:60px;
+  padding:4px;
+  text-align:center;
+  font-weight:bold;
+  color:green;
+  caret-color:green;
+}
+
+/* remove number arrows */
+.month-input::-webkit-outer-spin-button,
+.month-input::-webkit-inner-spin-button{
+  -webkit-appearance:none;
+  margin:0;
+}
+
+
+.month-input:focus{
+  outline:2px solid green;
+}
+
+/* ===== BUTTONS ===== */
+.action-btn{
+  padding:4px 8px;
+  border:none;
+  border-radius:4px;
+  color:#fff;
+  cursor:pointer;
+}
+.edit{background:#1a0af7}
+.delete{background:#f44336}
 </style>
 </head>
+
 <body>
 
-<h2>Registered Users</h2>
-<input type="text" id="searchInput" placeholder="Search users by name, mobile, address, or pincode">
+<h2>Monthly Register</h2>
+
+<input id="searchInput" placeholder="Search name / mobile / address">
 
 <table id="usersTable">
-  <thead>
-    <tr>
-     <th>#</th>
-      <th>Name</th>
-      <th>Mobile</th>
-      <th>Address</th>
-      <th>nov 25</th>
-      <th>dec 25</th>
-      <th>jan 26</th>
-      <th>feb 26</th>
-      <th>march 26</th>
-      <th>april 26</th>
-      <th>may 26</th>
-      <th>june 26</th>
-      <th>july 26</th>
-      <th>aug 26</th>
-      <th>sep 26</th>
-      <th>oct 26</th>
-      <th>Total Amount</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td colspan="6">Loading...</td></tr>
-  </tbody>
+<thead>
+<tr>
+<th>#</th>
+<th>Name</th>
+<th>Mobile</th>
+<th>Address</th>
+<th>Nov 25</th>
+<th>Dec 25</th>
+<th>Jan 26</th>
+<th>Feb 26</th>
+<th>Mar 26</th>
+<th>Apr 26</th>
+<th>May 26</th>
+<th>Jun 26</th>
+<th>Jul 26</th>
+<th>Aug 26</th>
+<th>Sep 26</th>
+<th>Oct 26</th>
+<th>Total</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody></tbody>
 </table>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import {initializeApp} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import {
+  getFirestore, collection, getDocs,
+  doc, getDoc, setDoc, deleteDoc
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
-  authDomain: "apna-kitchen-acdcc.firebaseapp.com",
-  projectId: "apna-kitchen-acdcc",
-  storageBucket: "apna-kitchen-acdcc.appspot.com",
-  messagingSenderId: "129562055761",
-  appId: "1:129562055761:web:baa01f9fea6f8eed025470"
+const firebaseConfig={
+  apiKey:"AIzaSyA6izuR2_oyHbAVhkIVkH0OHj6yAOduD_8",
+  authDomain:"apna-kitchen-acdcc.firebaseapp.com",
+  projectId:"apna-kitchen-acdcc"
 };
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
-let usersData = [];
-let editingId = null;
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
-// Load users
-async function loadUsers() {
-  const tableBody = document.querySelector("#usersTable tbody");
-  tableBody.innerHTML = "<tr><td colspan='6'>Loading...</td></tr>";
+const PRICE=200;
+const months=[
+"nov25","dec25","jan26","feb26","mar26","apr26",
+"may26","jun26","jul26","aug26","sep26","oct26"
+];
 
-  try {
-    const snap = await getDocs(collection(db,"users"));
-    usersData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-    renderTable(usersData);
-  } catch(e){
-    console.error(e);
-    tableBody.innerHTML="<tr><td colspan='6'>Failed to load users.</td></tr>";
-  }
-}
+const tbody=document.querySelector("#usersTable tbody");
 
-// Render table
-function renderTable(data) {
-  const tableBody = document.querySelector("#usersTable tbody");
-  if(data.length===0){ tableBody.innerHTML="<tr><td colspan='6'>No users found.</td></tr>"; return; }
+/* ===== LOAD USERS ===== */
+const snap=await getDocs(collection(db,"users"));
+let users=snap.docs.map(d=>({id:d.id,...d.data()}));
 
-  let html="";
-  data.forEach((u,index)=>{
-    html+=`
-      <tr id="row-${u.id}">
-        <td>${index+1}</td>
-        <td class="name">${u.name||""}</td>
-        <td class="mobile">
-          <a class="mobile-link" href="user_register_details.html?mobile=${u.mobile}">
-            ${u.mobile||""}
-          </a>
-        </td>
-        <td class="address">${u.address||""}</td>
-       <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-        <td class="actions">
-          <button class="action-btn edit" onclick="editRow('${u.id}')">Edit</button>
-          <button class="action-btn delete" onclick="deleteUser('${u.id}')">Delete</button>
-        </td>
-      </tr>
-    `;
-  });
-  tableBody.innerHTML = html;
-}
+for(let i=0;i<users.length;i++){
+  const u=users[i];
+  const mSnap=await getDoc(doc(db,"month_register",u.id));
+  const mData=mSnap.exists()?mSnap.data():{};
+  let total=0;
 
-// Search
-document.getElementById("searchInput").addEventListener("input",(e)=>{
-  const val=e.target.value.toLowerCase();
-  const filtered=usersData.filter(u=>{
-    return (u.name||"").toLowerCase().includes(val)
-        || (u.mobile||"").toLowerCase().includes(val)
-        || (u.address||"").toLowerCase().includes(val)
-        || (u.pincode||"").toLowerCase().includes(val);
-  });
-  renderTable(filtered);
-});
-
-// Inline edit
-window.editRow = (id)=>{
-  if(editingId) return alert("Finish editing the current row first!");
-  editingId=id;
-  const row=document.getElementById("row-"+id);
-  const name=row.querySelector(".name").innerText;
-  const mobile=row.querySelector(".mobile").innerText;
-  const address=row.querySelector(".address").innerText;
-  const pincode=row.querySelector(".pincode").innerText;
-
-  row.querySelector(".name").innerHTML=`<input class="inline-edit" value="${name}">`;
-  row.querySelector(".mobile").innerHTML=`<input class="inline-edit" value="${mobile}">`;
-  row.querySelector(".address").innerHTML=`<input class="inline-edit" value="${address}">`;
-  row.querySelector(".pincode").innerHTML=`<input class="inline-edit" value="${pincode}">`;
-
-  row.querySelector(".actions").innerHTML=`
-    <button class="action-btn save" onclick="saveRow('${id}')">Save</button>
-    <button class="action-btn cancel" onclick="cancelEdit()">Cancel</button>
+  let row=document.createElement("tr");
+  row.innerHTML=`
+    <td>${i+1}</td>
+    <td class="name">${u.name||""}</td>
+    <td>${u.mobile||""}</td>
+    <td>${u.address||""}</td>
   `;
 
-  row.querySelectorAll("input.inline-edit").forEach(input=>{
-    input.addEventListener("keydown",(e)=>{
-      if(e.key==="Enter"){ saveRow(id); }
-      if(e.key==="Escape"){ cancelEdit(); }
-    });
+  months.forEach(m=>{
+    const amt=mData[m]||0;
+    total+=amt;
+    const td=document.createElement("td");
+    td.innerHTML=`
+      <input type="number" class="month-input"
+        value="${amt?amt/PRICE:""}"
+        onblur="saveMonth('${u.id}','${m}',this.value)">
+    `;
+    row.appendChild(td);
   });
 
-  row.querySelector(".name input").focus();
+  row.innerHTML+=`
+    <td id="total-${u.id}">${total}</td>
+    <td>
+      <button class="action-btn edit">Edit</button>
+      <button class="action-btn delete"
+        onclick="deleteUser('${u.id}')">Delete</button>
+    </td>
+  `;
+
+  tbody.appendChild(row);
 }
 
-// Save changes
-window.saveRow = async (id)=>{
-  const row=document.getElementById("row-"+id);
-  const updatedData={
-    name: row.querySelector(".name input").value.trim(),
-    mobile: row.querySelector(".mobile input").value.trim(),
-    address: row.querySelector(".address input").value.trim(),
-    pincode: row.querySelector(".pincode input").value.trim()
-  };
-  try{
-    await updateDoc(doc(db,"users",id), updatedData);
-    editingId=null;
-    loadUsers();
-    alert("User updated successfully!");
-  }catch(e){ console.error(e); alert("Failed to update."); }
-}
+/* ===== SAVE MONTH ===== */
+window.saveMonth=async(uid,month,val)=>{
+  const num=parseInt(val)||0;
+  await setDoc(
+    doc(db,"month_register",uid),
+    {[month]:num*PRICE},
+    {merge:true}
+  );
 
-// Cancel edit
-window.cancelEdit = ()=>{
-  editingId=null;
-  renderTable(usersData);
-}
+  let total=0;
+  const snap=await getDoc(doc(db,"month_register",uid));
+  if(snap.exists()){
+    Object.values(snap.data()).forEach(v=>total+=v);
+  }
+  document.getElementById("total-"+uid).innerText=total;
+};
 
-// Delete user
-window.deleteUser = async(id)=>{
-  if(!confirm("Are you sure you want to delete this user?")) return;
-  try{
+/* ===== DELETE ===== */
+window.deleteUser=async(id)=>{
+  if(confirm("Delete user?")){
     await deleteDoc(doc(db,"users",id));
-    loadUsers();
-    alert("User deleted successfully.");
-  }catch(e){console.error(e); alert("Failed to delete.");}
-}
+    location.reload();
+  }
+};
 
-loadUsers();
+/* ===== SEARCH (NO RE-RENDER) ===== */
+document.getElementById("searchInput").addEventListener("input",function(){
+  const val=this.value.toLowerCase();
+  document.querySelectorAll("#usersTable tbody tr").forEach(r=>{
+    r.style.display=r.innerText.toLowerCase().includes(val)?"":"none";
+  });
+});
 </script>
 
 </body>
